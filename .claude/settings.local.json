@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(where npm:*)",
+      "Bash(where node:*)",
+      "Bash(cmd.exe /c \"where npm\")",
+      "Bash(cmd.exe /c \"where npm 2>&1\")",
+      "Bash(powershell.exe -Command \"Get-Command npm | Select-Object -ExpandProperty Source\")",
+      "Bash(powershell.exe -Command \"Test-Path 'C:\\\\Program Files\\\\nodejs\\\\npm.cmd'\")",
+      "Bash(export PATH=\"$NODE_BIN:$PATH\")",
+      "Bash('C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Microsoft/VisualStudio/NodeJs/node.exe' 'C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Microsoft/VisualStudio/NodeJs/node_modules/npm/bin/npm-cli.js' create vite@5 frontend -- --template react)",
+      "Bash(powershell.exe -Command ':*)",
+      "Bash(powershell.exe -Command \"python --version\")",
+      "Bash(powershell.exe -Command \"python3 --version\")"
+    ]
+  }
+}
