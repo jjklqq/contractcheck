@@ -47,7 +47,7 @@ function App() {
     try {
       const body = new FormData()
       body.append('file', file)
-      const res = await fetch('http://localhost:8000/analyze', { method: 'POST', body })
+      const res = await fetch('https://contractcheck-production-9404.up.railway.app/analyze', { method: 'POST', body })
       const data = await res.json()
       if (data.error) {
         setError(data.error)
