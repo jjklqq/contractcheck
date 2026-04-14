@@ -3,12 +3,15 @@ import os
 from pathlib import Path
 
 import fitz  # PyMuPDF
+import stripe
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
 
 load_dotenv()
+
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 app = FastAPI()
 
@@ -53,6 +56,30 @@ def root():
 @app.get("/stats")
 def stats():
     return {"total_analyses": read_count()}
+
+
+@app.post("/create-checkout-session")
+def create_checkout_session():
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": 200,
+                    "product_data": {
+                        "name": "Contract Analysis",
+                    },
+                },
+                "quantity": 1,
+            }],
+            mode="payment",
+            success_url="https://contractcheck-pnja.vercel.app?payment=success",
+            cancel_url="https://contractcheck-pnja.vercel.app?payment=cancelled",
+        )
+        return {"checkout_url": session.url}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.post("/analyze")

@@ -19,10 +19,14 @@ function App() {
   const [file, setFile] = useState(null)
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [totalAnalyses, setTotalAnalyses] = useState(0)
   const inputRef = useRef(null)
+
+  const params = new URLSearchParams(window.location.search)
+  const paymentStatus = params.get('payment') // "success" | "cancelled" | null
 
   useEffect(() => {
     fetch(`${API}/stats`)
@@ -51,6 +55,23 @@ function App() {
     e.preventDefault()
     setDragging(false)
     handleFile(e.dataTransfer.files[0])
+  }
+
+  async function goToCheckout() {
+    setCheckoutLoading(true)
+    try {
+      const res = await fetch(`${API}/create-checkout-session`, { method: 'POST' })
+      const data = await res.json()
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url
+      } else {
+        setError(data.error ?? 'Could not create checkout session.')
+        setCheckoutLoading(false)
+      }
+    } catch {
+      setError('Could not reach the server.')
+      setCheckoutLoading(false)
+    }
   }
 
   async function analyze() {
@@ -87,8 +108,20 @@ function App() {
         </span>
       </nav>
 
+      {/* Payment banners */}
+      {paymentStatus === 'success' && (
+        <div className="bg-green-50 border-b border-green-200 px-6 py-3 text-center text-green-700 text-sm font-medium">
+          ✅ Payment successful! Upload your contract below.
+        </div>
+      )}
+      {paymentStatus === 'cancelled' && (
+        <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3 text-center text-yellow-700 text-sm font-medium">
+          ⚠️ Payment cancelled.
+        </div>
+      )}
+
       {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
 
         <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight max-w-2xl">
           Upload your contract. Get a plain-English risk report in 30 seconds.
@@ -98,18 +131,49 @@ function App() {
           Spot red flags, missing protections, and unfair clauses — before you sign.
         </p>
 
-        {/* Upload zone */}
+        {/* Pricing section */}
+        <div className="mt-12 w-full max-w-lg bg-gray-50 border border-gray-200 rounded-2xl px-8 py-8 flex flex-col items-center gap-4">
+          <p className="text-gray-700 text-base font-medium">
+            One analysis — <span className="font-bold text-gray-900">$2</span>. No subscription, no account needed.
+          </p>
+          <button
+            onClick={goToCheckout}
+            disabled={checkoutLoading}
+            className={`w-full px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-xl transition-all
+              ${checkoutLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700 cursor-pointer'}`}
+          >
+            {checkoutLoading
+              ? <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Redirecting…
+                </span>
+              : 'Pay $2 & Analyze'
+            }
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="mt-10 w-full max-w-lg flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400 uppercase tracking-wide">or upload directly</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        {/* Upload zone — secondary */}
         <div
           onClick={() => inputRef.current.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className={`mt-12 w-full max-w-lg border-2 border-dashed rounded-2xl p-12 flex flex-col items-center gap-4 cursor-pointer transition-colors
+          className={`mt-6 w-full max-w-lg border-2 border-dashed rounded-2xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors
             ${dragging
               ? 'border-blue-500 bg-blue-50'
               : file
                 ? 'border-blue-400 bg-blue-50'
-                : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
             }`}
         >
           <input
@@ -121,7 +185,7 @@ function App() {
           />
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={`h-12 w-12 ${file ? 'text-blue-500' : 'text-gray-400'}`}
+            className={`h-8 w-8 ${file ? 'text-blue-500' : 'text-gray-300'}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -135,18 +199,18 @@ function App() {
           </svg>
           {file
             ? <p className="text-blue-700 text-sm font-medium">{file.name}</p>
-            : <p className="text-gray-500 text-sm">
+            : <p className="text-gray-400 text-sm">
                 Drop your PDF here or{' '}
-                <span className="text-blue-600 font-medium">click to browse</span>
+                <span className="text-blue-500 font-medium">click to browse</span>
               </p>
           }
         </div>
 
-        {/* CTA button */}
+        {/* Analyze button */}
         <button
           onClick={analyze}
           disabled={!file || loading}
-          className={`mt-6 px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-xl transition-opacity
+          className={`mt-4 px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-xl transition-opacity
             ${!file || loading ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-700 cursor-pointer'}`}
         >
           Analyze Contract
