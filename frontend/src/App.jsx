@@ -21,14 +21,19 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
-  const [totalAnalyses, setTotalAnalyses] = useState(null)
+  const [totalAnalyses, setTotalAnalyses] = useState(0)
   const inputRef = useRef(null)
 
   useEffect(() => {
     fetch(`${API}/stats`)
       .then(r => r.json())
-      .then(d => setTotalAnalyses(d.total_analyses))
-      .catch(() => {})
+      .then(d => {
+        console.log('[stats] fetched:', d)
+        setTotalAnalyses(d.total_analyses ?? 0)
+      })
+      .catch(err => {
+        console.error('[stats] fetch failed:', err)
+      })
   }, [])
 
   function handleFile(f) {
@@ -225,12 +230,10 @@ function App() {
 
       {/* Footer — social proof counter */}
       <footer className="py-6 text-center">
-        {totalAnalyses !== null && (
-          <p className="text-sm text-gray-400">
-            <span className="font-semibold text-gray-600">{totalAnalyses.toLocaleString()}</span>{' '}
-            contract{totalAnalyses === 1 ? '' : 's'} analyzed so far
-          </p>
-        )}
+        <p className="text-sm text-gray-400">
+          <span className="font-semibold text-gray-600">{totalAnalyses.toLocaleString()}</span>{' '}
+          contract{totalAnalyses === 1 ? '' : 's'} analyzed so far
+        </p>
       </footer>
 
     </div>
