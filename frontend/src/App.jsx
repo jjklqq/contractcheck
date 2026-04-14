@@ -1,5 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import './App.css'
+
+const API = 'https://contractcheck-production-9404.up.railway.app'
 
 function riskColor(score) {
   if (score <= 4) return 'text-green-600'
@@ -19,7 +21,15 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const [totalAnalyses, setTotalAnalyses] = useState(null)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    fetch(`${API}/stats`)
+      .then(r => r.json())
+      .then(d => setTotalAnalyses(d.total_analyses))
+      .catch(() => {})
+  }, [])
 
   function handleFile(f) {
     if (!f) return
@@ -47,12 +57,13 @@ function App() {
     try {
       const body = new FormData()
       body.append('file', file)
-      const res = await fetch('https://contractcheck-production-9404.up.railway.app/analyze', { method: 'POST', body })
+      const res = await fetch(`${API}/analyze`, { method: 'POST', body })
       const data = await res.json()
       if (data.error) {
         setError(data.error)
       } else {
         setResult(data)
+        setTotalAnalyses(n => (n ?? 0) + 1)
       }
     } catch {
       setError('Could not reach the server. Make sure the backend is running.')
@@ -62,7 +73,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col">
 
       {/* Navbar */}
       <nav className="border-b border-gray-100 px-6 py-4">
@@ -72,7 +83,7 @@ function App() {
       </nav>
 
       {/* Hero */}
-      <main className="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-24 text-center">
 
         <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight max-w-2xl">
           Upload your contract. Get a plain-English risk report in 30 seconds.
@@ -103,7 +114,6 @@ function App() {
             className="hidden"
             onChange={onInputChange}
           />
-          {/* Document icon */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className={`h-12 w-12 ${file ? 'text-blue-500' : 'text-gray-400'}`}
@@ -212,6 +222,17 @@ function App() {
         )}
 
       </main>
+
+      {/* Footer — social proof counter */}
+      <footer className="py-6 text-center">
+        {totalAnalyses !== null && (
+          <p className="text-sm text-gray-400">
+            <span className="font-semibold text-gray-600">{totalAnalyses.toLocaleString()}</span>{' '}
+            contract{totalAnalyses === 1 ? '' : 's'} analyzed so far
+          </p>
+        )}
+      </footer>
+
     </div>
   )
 }

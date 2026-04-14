@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import fitz  # PyMuPDF
 from dotenv import load_dotenv
@@ -13,7 +14,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://contractcheck-lac.vercel.app"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -28,10 +29,30 @@ SYSTEM_PROMPT = (
     "risk_score (integer 1-10)"
 )
 
+USAGE_FILE = Path(__file__).parent / "usage.json"
+
+
+def read_count() -> int:
+    try:
+        return json.loads(USAGE_FILE.read_text())["total_analyses"]
+    except Exception:
+        return 0
+
+
+def increment_count() -> int:
+    count = read_count() + 1
+    USAGE_FILE.write_text(json.dumps({"total_analyses": count}))
+    return count
+
 
 @app.get("/")
 def root():
     return {"status": "ok"}
+
+
+@app.get("/stats")
+def stats():
+    return {"total_analyses": read_count()}
 
 
 @app.post("/analyze")
@@ -57,6 +78,7 @@ async def analyze(file: UploadFile = File(...)):
             ],
         )
         result = json.loads(response.choices[0].message.content)
+        increment_count()
         return result
     except Exception as e:
         return {"error": f"Analysis failed: {str(e)}"}
