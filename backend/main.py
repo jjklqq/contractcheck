@@ -53,6 +53,15 @@ def root():
     return {"status": "ok"}
 
 
+@app.get("/debug-env")
+def debug_env():
+    key = os.getenv("STRIPE_SECRET_KEY")
+    return {
+        "stripe_key_set": bool(key),
+        "stripe_key_prefix": key[:7] if key else "NOT SET",
+    }
+
+
 @app.get("/stats")
 def stats():
     return {"total_analyses": read_count()}
