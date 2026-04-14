@@ -31,7 +31,9 @@
       "Bash(git -C /c/Users/artem/Desktop/contractcheck add backend/main.py backend/requirements.txt backend/.env.example frontend/src/App.jsx)",
       "Bash(git -C /c/Users/artem/Desktop/contractcheck commit -m \"add Stripe checkout and payment status banners\")",
       "Bash(git -C /c/Users/artem/Desktop/contractcheck add .)",
-      "Bash(git -C /c/Users/artem/Desktop/contractcheck commit -m \"fix: trigger redeploy\" --author=\"Artem <artemsitalo88@gmail.com>\")"
+      "Bash(git -C /c/Users/artem/Desktop/contractcheck commit -m \"fix: trigger redeploy\" --author=\"Artem <artemsitalo88@gmail.com>\")",
+      "Bash(git -C /c/Users/artem/Desktop/contractcheck commit -m \"update CORS to include contractcheck-pi.vercel.app\")",
+      "Bash(git -C /c/Users/artem/Desktop/contractcheck commit -m \"fix CORS for new Vercel URL\" --author=\"Artem <artemsitalo88@gmail.com>\")"
     ]
   }
 }
