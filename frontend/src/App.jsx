@@ -1,3 +1,4 @@
+// ContractCheck AI v1.1
 import { useState, useRef, useEffect } from 'react'
 import './App.css'
 
