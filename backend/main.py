@@ -11,7 +11,7 @@ from groq import Groq
 
 load_dotenv()
 
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 app = FastAPI()
 
