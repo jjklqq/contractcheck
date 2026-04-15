@@ -1,4 +1,4 @@
-// ContractCheck AI v1.1
+// ContractCheck AI v1.2
 import { useState, useRef, useEffect } from 'react'
 import './App.css'
 
@@ -32,13 +32,29 @@ function App() {
   useEffect(() => {
     fetch(`${API}/stats`)
       .then(r => r.json())
-      .then(d => {
-        console.log('[stats] fetched:', d)
-        setTotalAnalyses(d.total_analyses ?? 0)
-      })
-      .catch(err => {
-        console.error('[stats] fetch failed:', err)
-      })
+      .then(d => setTotalAnalyses(d.total_analyses ?? 0))
+      .catch(() => {})
+  }, [])
+
+  // On payment success, restore file from sessionStorage and auto-analyze
+  useEffect(() => {
+    if (paymentStatus === 'success') {
+      const storedFile = sessionStorage.getItem('pendingFile')
+      const storedName = sessionStorage.getItem('pendingFileName')
+      const storedType = sessionStorage.getItem('pendingFileType')
+      if (storedFile && storedName) {
+        fetch(storedFile)
+          .then(r => r.blob())
+          .then(blob => {
+            const f = new File([blob], storedName, { type: storedType })
+            setFile(f)
+            sessionStorage.removeItem('pendingFile')
+            sessionStorage.removeItem('pendingFileName')
+            sessionStorage.removeItem('pendingFileType')
+            analyzeFile(f)
+          })
+      }
+    }
   }, [])
 
   function handleFile(f) {
@@ -46,6 +62,14 @@ function App() {
     setFile(f)
     setResult(null)
     setError(null)
+    // Store file in sessionStorage so it survives the Stripe redirect
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      sessionStorage.setItem('pendingFile', e.target.result)
+      sessionStorage.setItem('pendingFileName', f.name)
+      sessionStorage.setItem('pendingFileType', f.type)
+    }
+    reader.readAsDataURL(f)
   }
 
   function onInputChange(e) {
@@ -59,6 +83,7 @@ function App() {
   }
 
   async function goToCheckout() {
+    if (!file) return
     setCheckoutLoading(true)
     try {
       const res = await fetch(`${API}/create-checkout-session`, { method: 'POST' })
@@ -75,15 +100,14 @@ function App() {
     }
   }
 
-  async function analyze() {
-    if (!file) return
+  async function analyzeFile(f) {
+    if (!f) return
     setLoading(true)
     setResult(null)
     setError(null)
-
     try {
       const body = new FormData()
-      body.append('file', file)
+      body.append('file', f)
       const res = await fetch(`${API}/analyze`, { method: 'POST', body })
       const data = await res.json()
       if (data.error) {
@@ -112,7 +136,7 @@ function App() {
       {/* Payment banners */}
       {paymentStatus === 'success' && (
         <div className="bg-green-50 border-b border-green-200 px-6 py-3 text-center text-green-700 text-sm font-medium">
-          ✅ Payment successful! Upload your contract below.
+          ✅ Payment successful! Analyzing your contract…
         </div>
       )}
       {paymentStatus === 'cancelled' && (
@@ -132,44 +156,13 @@ function App() {
           Spot red flags, missing protections, and unfair clauses — before you sign.
         </p>
 
-        {/* Pricing section */}
-        <div className="mt-12 w-full max-w-lg bg-gray-50 border border-gray-200 rounded-2xl px-8 py-8 flex flex-col items-center gap-4">
-          <p className="text-gray-700 text-base font-medium">
-            One analysis — <span className="font-bold text-gray-900">$2</span>. No subscription, no account needed.
-          </p>
-          <button
-            onClick={goToCheckout}
-            disabled={checkoutLoading}
-            className={`w-full px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-xl transition-all
-              ${checkoutLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700 cursor-pointer'}`}
-          >
-            {checkoutLoading
-              ? <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  Redirecting…
-                </span>
-              : 'Pay $2 & Analyze'
-            }
-          </button>
-        </div>
-
-        {/* Divider */}
-        <div className="mt-10 w-full max-w-lg flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400 uppercase tracking-wide">or upload directly</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
-
-        {/* Upload zone — secondary */}
+        {/* Step 1 — Upload zone */}
         <div
           onClick={() => inputRef.current.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
-          className={`mt-6 w-full max-w-lg border-2 border-dashed rounded-2xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors
+          className={`mt-10 w-full max-w-lg border-2 border-dashed rounded-2xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors
             ${dragging
               ? 'border-blue-500 bg-blue-50'
               : file
@@ -207,15 +200,32 @@ function App() {
           }
         </div>
 
-        {/* Analyze button */}
-        <button
-          onClick={analyze}
-          disabled={!file || loading}
-          className={`mt-4 px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-xl transition-opacity
-            ${!file || loading ? 'opacity-40 cursor-not-allowed' : 'hover:bg-blue-700 cursor-pointer'}`}
-        >
-          Analyze Contract
-        </button>
+        {/* Step 2 — Pay & Analyze */}
+        <div className="mt-6 w-full max-w-lg bg-gray-50 border border-gray-200 rounded-2xl px-8 py-6 flex flex-col items-center gap-3">
+          <p className="text-gray-700 text-base font-medium">
+            One analysis — <span className="font-bold text-gray-900">$2</span>. No subscription, no account needed.
+          </p>
+          <button
+            onClick={goToCheckout}
+            disabled={!file || checkoutLoading}
+            className={`w-full px-8 py-3 bg-blue-600 text-white text-base font-semibold rounded-xl transition-all
+              ${!file || checkoutLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700 cursor-pointer'}`}
+          >
+            {checkoutLoading
+              ? <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Redirecting…
+                </span>
+              : 'Pay $2 & Analyze'
+            }
+          </button>
+          {!file && (
+            <p className="text-xs text-gray-400">Upload a PDF contract above to continue</p>
+          )}
+        </div>
 
         {/* Loading */}
         {loading && (
