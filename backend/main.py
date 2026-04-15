@@ -75,7 +75,7 @@ def create_checkout_session():
             line_items=[{
                 "price_data": {
                     "currency": "usd",
-                    "unit_amount": 200,
+                    "unit_amount": 99,
                     "product_data": {
                         "name": "Contract Analysis",
                     },
