@@ -1,6 +1,9 @@
-// ContractCheck AI v1.2
+// ContractCheck AI v1.3
 import { useState, useRef, useEffect } from 'react'
+import { Routes, Route, Link } from 'react-router-dom'
 import './App.css'
+import HowItWorks from './pages/HowItWorks.jsx'
+import UseCases from './pages/UseCases.jsx'
 
 const API = 'https://contractcheck-production-11ad.up.railway.app'
 
@@ -16,7 +19,7 @@ function riskBg(score) {
   return 'bg-red-50 border-red-200'
 }
 
-function App() {
+function Home() {
   const [file, setFile] = useState(null)
   const [dragging, setDragging] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -72,9 +75,7 @@ function App() {
     reader.readAsDataURL(f)
   }
 
-  function onInputChange(e) {
-    handleFile(e.target.files[0])
-  }
+  function onInputChange(e) { handleFile(e.target.files[0]) }
 
   function onDrop(e) {
     e.preventDefault()
@@ -127,10 +128,14 @@ function App() {
     <div className="min-h-screen bg-white text-gray-900 font-sans flex flex-col">
 
       {/* Navbar */}
-      <nav className="border-b border-gray-100 px-6 py-4">
-        <span className="text-xl font-bold text-gray-900 tracking-tight">
+      <nav className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+        <Link to="/" className="text-xl font-bold text-gray-900 tracking-tight">
           ContractCheck AI
-        </span>
+        </Link>
+        <div className="flex gap-6 text-sm text-gray-500">
+          <Link to="/how-it-works" className="hover:text-gray-900 transition-colors">How it works</Link>
+          <Link to="/use-cases" className="hover:text-gray-900 transition-colors">Use cases</Link>
+        </div>
       </nav>
 
       {/* Payment banners */}
@@ -249,7 +254,6 @@ function App() {
         {result && (
           <div className="mt-10 w-full max-w-lg text-left flex flex-col gap-6">
 
-            {/* Risk score */}
             <div className={`border rounded-2xl px-6 py-5 flex items-center gap-4 ${riskBg(result.risk_score)}`}>
               <span className={`text-5xl font-bold ${riskColor(result.risk_score)}`}>
                 {result.risk_score}
@@ -262,13 +266,11 @@ function App() {
               </div>
             </div>
 
-            {/* Summary */}
             <div className="border border-gray-100 rounded-2xl px-6 py-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Summary</p>
               <p className="text-gray-700 text-sm leading-relaxed">{result.summary}</p>
             </div>
 
-            {/* Red flags */}
             {result.red_flags?.length > 0 && (
               <div className="border border-gray-100 rounded-2xl px-6 py-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Red Flags</p>
@@ -283,7 +285,6 @@ function App() {
               </div>
             )}
 
-            {/* Missing protections */}
             {result.missing_protections?.length > 0 && (
               <div className="border border-gray-100 rounded-2xl px-6 py-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Missing Protections</p>
@@ -303,16 +304,28 @@ function App() {
 
       </main>
 
-      {/* Footer — social proof counter */}
-      <footer className="py-6 text-center">
-        <p className="text-sm text-gray-400">
+      {/* Footer */}
+      <footer className="border-t border-gray-100 py-6 px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-400">
+        <p>
           <span className="font-semibold text-gray-600">{totalAnalyses.toLocaleString()}</span>{' '}
           contract{totalAnalyses === 1 ? '' : 's'} analyzed so far
         </p>
+        <div className="flex gap-6">
+          <Link to="/how-it-works" className="hover:text-gray-600 transition-colors">How it works</Link>
+          <Link to="/use-cases" className="hover:text-gray-600 transition-colors">Use cases</Link>
+        </div>
       </footer>
 
     </div>
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/use-cases" element={<UseCases />} />
+    </Routes>
+  )
+}
