@@ -208,7 +208,7 @@ function Home() {
         {/* Step 2 — Pay & Analyze */}
         <div className="mt-6 w-full max-w-lg bg-gray-50 border border-gray-200 rounded-2xl px-8 py-6 flex flex-col items-center gap-3">
           <p className="text-gray-700 text-base font-medium">
-            One analysis — <span className="font-bold text-gray-900">$2</span>. No subscription, no account needed.
+            One analysis — <span className="font-bold text-gray-900">$0.99</span>. No subscription, no account needed.
           </p>
           <button
             onClick={goToCheckout}
@@ -224,7 +224,7 @@ function Home() {
                   </svg>
                   Redirecting…
                 </span>
-              : 'Pay $2 & Analyze'
+              : 'Pay $0.99 & Analyze'
             }
           </button>
           {!file && (
