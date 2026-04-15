@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import './App.css'
 
-const API = 'https://contractcheck-production-9404.up.railway.app'
+const API = 'https://contractcheck-production-11ad.up.railway.app'
 
 function riskColor(score) {
   if (score <= 4) return 'text-green-600'
